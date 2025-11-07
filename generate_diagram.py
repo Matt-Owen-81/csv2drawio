@@ -119,7 +119,7 @@ def generate_drawio(config, data):
             source_y = header_y + header_h
             target_x = sub_x
             target_y = sub_y + sub_h / 2
-            bend_y = sub_y - 20
+            bend_y = target_y - 40
             diagram.append(create_edge(
                 header_id, sub_id,
                 source_x, source_y,
@@ -147,7 +147,7 @@ def generate_drawio(config, data):
                 source_y = sub_y + sub_h
                 target_x = item_x + item_w / 2
                 target_y = item_y
-                bend_y = item_y - 20
+                bend_y = target_y - 20
                 diagram.append(create_edge(
                     sub_id, item_id,
                     source_x, source_y,
