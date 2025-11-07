@@ -115,14 +115,19 @@ def generate_drawio(config, data):
             ))
 
             # Header → Subheader connector
+            source_x = header_x + 20
+            source_y = header_y + header_h
+            target_x = sub_x
+            target_y = sub_y + sub_h / 2
+            bend_y = sub_y - 20
             diagram.append(create_edge(
                 header_id, sub_id,
-                header_x + 20, header_y + header_h,
-                sub_x, sub_y + sub_h / 2,
+                source_x, source_y,
+                target_x, target_y,
                 points=[
-                    (header_x + header_width / 2, sub_y - 20),
-                    (header_x + 20, sub_y - 20),
-                    (header_x + 20, sub_y + sub_h / 2)
+                    (header_x + header_width / 2, bend_y),
+                    (source_x, bend_y),
+                    (source_x, target_y)
                 ],
                 style="edgeStyle=orthogonalEdgeStyle;exitX=0.5;exitY=1;entryX=0;entryY=0.5;"
             ))
@@ -138,13 +143,18 @@ def generate_drawio(config, data):
                 ))
 
                 # Subheader → Item connector
+                source_x = sub_x + sub_w / 2
+                source_y = sub_y + sub_h
+                target_x = item_x + item_w / 2
+                target_y = item_y
+                bend_y = item_y - 20
                 diagram.append(create_edge(
                     sub_id, item_id,
-                    sub_x + sub_w / 2, sub_y + sub_h,
-                    item_x + item_w / 2, item_y,
+                    source_x, source_y,
+                    target_x, target_y,
                     points=[
-                        (sub_x + sub_w / 2, item_y - 20),
-                        (item_x + item_w / 2, item_y - 20)
+                        (source_x, bend_y),
+                        (target_x, bend_y)
                     ],
                     style="edgeStyle=orthogonalEdgeStyle;exitX=0.5;exitY=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;"
                 ))
