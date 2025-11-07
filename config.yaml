@@ -2,16 +2,16 @@ page:
   width: 1200           # width of page in points
   height: 800           # height of page in points
   background: "#ffffff" # background color of page
-  grid: 1               # show grid (1 = true, 0 = false)
-  gridSize: 10          # size of grid squares
+  grid: 1               # show grid
+  gridSize: 10          # grid square size
   guides: 1             # show alignment guides
   tooltips: 1           # show tooltips
   connect: 1            # enable connector snapping
   arrows: 1             # show arrows on connectors
   fold: 1               # allow folding of groups
-  pageScale: 1          # scale factor for page
-  pageWidth: 1200       # width of printable page
-  pageHeight: 800       # height of printable page
+  pageScale: 1          # scale factor
+  pageWidth: 1200       # printable page width
+  pageHeight: 800       # printable page height
 
 shape:
   header:
@@ -24,13 +24,13 @@ shape:
     height: 40
   item:
     style: "rounded=1;fillColor=#fff2cc"
-    width: 100
-    height: 25
+    width: 120
+    height: 40
 
 layout:
-  header_x: 40                # starting x position for header
-  header_y: 40                # starting y position for header
-  subheader_x: 40             # fixed x position for subheaders
-  subheader_spacing_y: 40     # vertical spacing between subheaders
-  item_spacing_x: 40          # horizontal spacing between subheader and item
-  item_spacing_y: 35          # vertical spacing between items
+  header_x: 40                # header x position
+  header_y: 40                # header y position
+  subheader_indent: 40        # indent from header for subheaders
+  subheader_spacing_y: 80     # vertical spacing between subheaders
+  item_spacing_x: 160         # horizontal spacing between items
+  item_spacing_y: 40          # vertical offset from subheader to first item
