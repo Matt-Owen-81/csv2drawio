@@ -114,17 +114,16 @@ def generate_drawio(config, data):
                 sub_x, sub_y, sub_w, sub_h
             ))
 
-            # Header → Subheader connector with bend points
-            bend_points = [
-                (header_x + header_width / 2, sub_y - 20),
-                (sub_x - 20, sub_y - 20),
-                (sub_x - 20, sub_y + sub_h / 2)
-            ]
+            # Header → Subheader connector
             diagram.append(create_edge(
                 header_id, sub_id,
-                header_x + sub_indent_x / 2, header_y + header_h,
+                header_x + 20, header_y + header_h,
                 sub_x, sub_y + sub_h / 2,
-                points=bend_points,
+                points=[
+                    (header_x + header_width / 2, sub_y - 20),
+                    (header_x + 20, sub_y - 20),
+                    (header_x + 20, sub_y + sub_h / 2)
+                ],
                 style="edgeStyle=orthogonalEdgeStyle;exitX=0.5;exitY=1;entryX=0;entryY=0.5;"
             ))
 
@@ -138,16 +137,15 @@ def generate_drawio(config, data):
                     item_x, item_y, item_w, item_h
                 ))
 
-                # Subheader → Item connector with horizontal bend
-                bend_points = [
-                    (sub_x + sub_w / 2 - 60, item_y - 20),
-                    (item_x + item_w / 2 + 60, item_y - 20)
-                ]
+                # Subheader → Item connector
                 diagram.append(create_edge(
                     sub_id, item_id,
                     sub_x + sub_w / 2, sub_y + sub_h,
                     item_x + item_w / 2, item_y,
-                    points=bend_points,
+                    points=[
+                        (sub_x + sub_w / 2, item_y - 20),
+                        (item_x + item_w / 2, item_y - 20)
+                    ],
                     style="edgeStyle=orthogonalEdgeStyle;exitX=0.5;exitY=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;"
                 ))
 
