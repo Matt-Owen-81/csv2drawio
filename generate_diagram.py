@@ -24,6 +24,23 @@ def create_cell(id, value, style, x, y, width, height, parent='1', edge=False, s
     geometry.set('as', 'geometry')
     return cell
 
+def create_edge(source_id, target_id, start_x, start_y, end_x, end_y):
+    edge_id = str(uuid.uuid4())
+    edge = Element('mxCell', {
+        'id': edge_id,
+        'value': '',
+        'style': '',
+        'edge': '1',
+        'parent': '1',
+        'source': source_id,
+        'target': target_id
+    })
+    geometry = SubElement(edge, 'mxGeometry', {'relative': '1'})
+    geometry.set('as', 'geometry')
+    SubElement(geometry, 'mxPoint', {'x': str(start_x), 'y': str(start_y)}).set('as', 'sourcePoint')
+    SubElement(geometry, 'mxPoint', {'x': str(end_x), 'y': str(end_y)}).set('as', 'targetPoint')
+    return edge
+
 def generate_drawio(config, data):
     root = Element('mxGraphModel', {
         'dx': '0', 'dy': '0',
@@ -92,41 +109,30 @@ def generate_drawio(config, data):
                 sub_id, sub, shape['subheader']['style'],
                 sub_x, sub_y, sub_w, sub_h
             ))
-            edge_id = str(uuid.uuid4())
-            edge = create_cell(edge_id, '', '', 0, 0, 0, 0, edge=True, source=header_id, target=sub_id)
-            start_geo = SubElement(edge, 'mxGeometry', {'relative': '1'})
-            start_geo.set('as', 'geometry')
-            SubElement(start_geo, 'mxPoint', {
-                'x': str(0.5 * sub_indent_x),
-                'y': str(header_y + header_h)
-            }).set('as', 'sourcePoint')
-            SubElement(start_geo, 'mxPoint', {
-                'x': str(sub_x),
-                'y': str(sub_y + 0.5 * sub_h)
-            }).set('as', 'targetPoint')
-            diagram.append(edge)
+
+            # Header → Subheader connector
+            start_x = header_x + 0.5 * sub_indent_x
+            start_y = header_y + header_h
+            end_x = sub_x
+            end_y = sub_y + 0.5 * sub_h
+            diagram.append(create_edge(header_id, sub_id, start_x, start_y, end_x, end_y))
 
             item_start_y = sub_y + sub_h + item_gap_y
             for i_index, item in enumerate(items):
                 item_x = sub_x + sub_w + item_gap_x + (i_index * item_spacing_x)
+                item_y = item_start_y
                 item_id = str(uuid.uuid4())
                 diagram.append(create_cell(
                     item_id, item, shape['item']['style'],
-                    item_x, item_start_y, item_w, item_h
+                    item_x, item_y, item_w, item_h
                 ))
-                edge_id = str(uuid.uuid4())
-                edge = create_cell(edge_id, '', '', 0, 0, 0, 0, edge=True, source=sub_id, target=item_id)
-                start_geo = SubElement(edge, 'mxGeometry', {'relative': '1'})
-                start_geo.set('as', 'geometry')
-                SubElement(start_geo, 'mxPoint', {
-                    'x': str(sub_x + sub_w),
-                    'y': str(sub_y + 0.5 * sub_h)
-                }).set('as', 'sourcePoint')
-                SubElement(start_geo, 'mxPoint', {
-                    'x': str(item_x),
-                    'y': str(item_y + 0.5 * item_w)
-                }).set('as', 'targetPoint')
-                diagram.append(edge)
+
+                # Subheader → Item connector
+                start_x = sub_x + sub_w
+                start_y = sub_y + 0.5 * sub_h
+                end_x = item_x
+                end_y = item_y + 0.5 * item_h
+                diagram.append(create_edge(sub_id, item_id, start_x, start_y, end_x, end_y))
 
             last_item_bottom_y = item_start_y + item_h + item_to_subheader_gap_y
 
