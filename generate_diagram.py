@@ -199,4 +199,4 @@ for header, sub_map in grouped.items():
     drawio_root.append(diagram_element)
 
 # Save to file
-pretty_xml = minidom.parseString(tostring(drawio_root)).toprettyxml(indent="
+pretty_xml = minidom.parse
