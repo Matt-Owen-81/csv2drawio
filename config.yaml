@@ -28,9 +28,11 @@ shape:
     height: 40
 
 layout:
-  header_x: 40                # header x position
-  header_y: 40                # header y position
-  subheader_indent: 40        # indent from header for subheaders
-  subheader_spacing_y: 80     # vertical spacing between subheaders
-  item_spacing_x: 160         # horizontal spacing between items
-  item_spacing_y: 40          # vertical offset from subheader to first item
+  header_x: 40                  # x position of header
+  header_y: 40                  # y position of header
+  subheader_indent_x: 40        # gap between right of header and left of subheader
+  subheader_gap_y: 40           # gap between bottom of header and top of subheader
+  item_gap_x: 40                # gap between right of subheader and left of item
+  item_gap_y: 40                # gap between bottom of subheader and top of item
+  subheader_spacing_y: 80       # vertical spacing between subheaders
+  item_spacing_x: 160           # horizontal spacing between items
