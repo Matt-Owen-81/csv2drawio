@@ -176,4 +176,27 @@ with open('data.csv') as f:
 
 # Group data by Header → Subheader
 grouped = {}
-for row in data
+for row in data:
+    h = row['Header']
+    s = row['Sub-Header']
+    grouped.setdefault(h, {}).setdefault(s, []).append(row)
+
+# Create multi-page drawio file
+drawio_root = Element('mxfile', {
+    'host': 'app.diagrams.net',
+    'modified': '2025-11-07T22:00:00Z',
+    'agent': 'python',
+    'version': '20.6.3',
+    'type': 'device'
+})
+
+for header, sub_map in grouped.items():
+    diagram_xml = generate_diagram(config, header, sub_map)
+    diagram_element = Element('diagram', {'name': header})
+    diagram_element.text = diagram_xml
+    drawio_root.append(diagram_element)
+
+# Save to file
+pretty_xml = minidom.parseString(tostring(drawio_root)).toprettyxml(indent="  ")
+with open('diagram.drawio', 'w', encoding='utf-8') as f:
+    f.write(pretty_xml)
