@@ -105,9 +105,11 @@ def generate_drawio(config, data):
         header_id = str(uuid.uuid4())
         diagram.append(create_cell(header_id, header, shape['header']['style'], header_x, header_y, header_width, header_h))
 
+        current_y = header_y + header_h + sub_gap_y
+
         for sub_index, (sub, items) in enumerate(sub_map.items()):
             sub_x = header_x + sub_indent_x
-            sub_y = header_y + header_h + sub_gap_y + sub_index * sub_spacing_y
+            sub_y = current_y
             sub_id = str(uuid.uuid4())
             diagram.append(create_cell(sub_id, sub, shape['subheader']['style'], sub_x, sub_y, sub_w, sub_h))
 
@@ -130,6 +132,9 @@ def generate_drawio(config, data):
                 ],
                 style="edgeStyle=orthogonalEdgeStyle;exitX=0.5;exitY=1;entryX=0;entryY=0.5;"
             ))
+
+            item_rows = (len(items) - 1) // item_wrap_limit + 1
+            item_block_height = item_rows * (item_h + item_gap_y)
 
             for i_index, item in enumerate(items):
                 row = i_index // item_wrap_limit
@@ -155,6 +160,8 @@ def generate_drawio(config, data):
                     ],
                     style="edgeStyle=orthogonalEdgeStyle;exitX=0.5;exitY=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;"
                 ))
+
+            current_y = sub_y + sub_h + item_block_height + item_to_subheader_gap_y
 
     return tostring(root, encoding='unicode')
 
