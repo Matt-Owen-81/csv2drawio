@@ -83,7 +83,6 @@ def generate_drawio(config, data):
     item_w = shape['item']['width']
     item_h = shape['item']['height']
     header_h = shape['header']['height']
-    header_w = config['page']['width']  # dynamic width
 
     grouped = {}
     for row in data:
@@ -93,11 +92,19 @@ def generate_drawio(config, data):
         grouped.setdefault(h, {}).setdefault(s, []).append(i)
 
     for header, sub_map in grouped.items():
-        header_id = str(uuid.uuid4())
-        diagram.append(create_cell(header_id, header, shape['header']['style'], header_x, header_y, header_w, header_h))
+        # First pass: calculate max item x to determine header width
+        max_item_right = header_x
+        for sub_index, (sub, items) in enumerate(sub_map.items()):
+            for i_index, item in enumerate(items):
+                item_x = header_x + sub_indent_x + sub_w + item_gap_x + i_index * item_spacing_x
+                item_right = item_x + item_w
+                max_item_right = max(max_item_right, item_right)
 
-        sub_index = 0
-        for sub, items in sub_map.items():
+        header_width = max_item_right - header_x
+        header_id = str(uuid.uuid4())
+        diagram.append(create_cell(header_id, header, shape['header']['style'], header_x, header_y, header_width, header_h))
+
+        for sub_index, (sub, items) in enumerate(sub_map.items()):
             sub_x = header_x + sub_indent_x
             sub_y = header_y + header_h + sub_gap_y + sub_index * sub_spacing_y
             sub_id = str(uuid.uuid4())
@@ -114,7 +121,7 @@ def generate_drawio(config, data):
                 source_x, source_y,
                 target_x, target_y,
                 points=[
-                    (header_x + header_w / 2, bend_y),
+                    (header_x + header_width / 2, bend_y),
                     (source_x, bend_y),
                     (source_x, target_y)
                 ],
@@ -143,8 +150,6 @@ def generate_drawio(config, data):
                     ],
                     style="edgeStyle=orthogonalEdgeStyle;exitX=0.5;exitY=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;"
                 ))
-
-            sub_index += 1
 
     return tostring(root, encoding='unicode')
 
