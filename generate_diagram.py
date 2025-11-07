@@ -77,6 +77,7 @@ def generate_drawio(config, data):
     sub_spacing_y = layout['subheader_spacing_y']
     item_spacing_x = layout['item_spacing_x']
     item_to_subheader_gap_y = layout['item_to_subheader_gap_y']
+    item_wrap_limit = layout.get('item_wrap_limit', 4)
 
     sub_w = shape['subheader']['width']
     sub_h = shape['subheader']['height']
@@ -92,11 +93,11 @@ def generate_drawio(config, data):
         grouped.setdefault(h, {}).setdefault(s, []).append(i)
 
     for header, sub_map in grouped.items():
-        # First pass: calculate max item x to determine header width
         max_item_right = header_x
         for sub_index, (sub, items) in enumerate(sub_map.items()):
             for i_index, item in enumerate(items):
-                item_x = header_x + sub_indent_x + sub_w + item_gap_x + i_index * item_spacing_x
+                col = i_index % item_wrap_limit
+                item_x = header_x + sub_indent_x + sub_w + item_gap_x + col * item_spacing_x
                 item_right = item_x + item_w
                 max_item_right = max(max_item_right, item_right)
 
@@ -110,16 +111,14 @@ def generate_drawio(config, data):
             sub_id = str(uuid.uuid4())
             diagram.append(create_cell(sub_id, sub, shape['subheader']['style'], sub_x, sub_y, sub_w, sub_h))
 
-            # Header → Subheader connector using specified bend geometry
+            # Header → Subheader connector
             source_x = header_x + 20
             source_y = header_y + header_h
             target_x = sub_x
             target_y = sub_y + sub_h / 2
-
             mid_y = header_y + header_h + sub_gap_y / 2
             bend_x = header_x + sub_indent_x / 2
             center_x = header_x + header_width / 2
-
             diagram.append(create_edge(
                 header_id, sub_id,
                 source_x, source_y,
@@ -133,8 +132,10 @@ def generate_drawio(config, data):
             ))
 
             for i_index, item in enumerate(items):
-                item_x = sub_x + sub_w + item_gap_x + i_index * item_spacing_x
-                item_y = sub_y + sub_h + item_gap_y
+                row = i_index // item_wrap_limit
+                col = i_index % item_wrap_limit
+                item_x = sub_x + sub_w + item_gap_x + col * item_spacing_x
+                item_y = sub_y + sub_h + item_gap_y + row * (item_h + item_gap_y)
                 item_id = str(uuid.uuid4())
                 diagram.append(create_cell(item_id, item, shape['item']['style'], item_x, item_y, item_w, item_h))
 
