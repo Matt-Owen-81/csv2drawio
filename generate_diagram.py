@@ -25,7 +25,6 @@ def create_cell(id, value, style, x, y, width, height, parent='1', edge=False, s
     return cell
 
 def generate_drawio(config, data):
-    # Create root graph model
     root = Element('mxGraphModel', {
         'dx': '0', 'dy': '0',
         'grid': str(config['page'].get('grid', 1)),
@@ -42,30 +41,25 @@ def generate_drawio(config, data):
         'background': config['page'].get('background', '#ffffff')
     })
 
-    # Create diagram root
     diagram = SubElement(root, 'root')
     SubElement(diagram, 'mxCell', {'id': '0'})
     SubElement(diagram, 'mxCell', {'id': '1', 'parent': '0'})
 
-    # Load layout and shape config
-    layout = config.get('layout', {})
-    shape_conf = config['shape']
+    layout = config['layout']
+    shape = config['shape']
 
-    header_x = layout.get('header_x', 40)
-    header_y = layout.get('header_y', 40)
-    subheader_x = layout.get('subheader_x', 40)
-    subheader_spacing_y = layout.get('subheader_spacing_y', 40)
-    item_spacing_x = layout.get('item_spacing_x', 40)
-    item_spacing_y = layout.get('item_spacing_y', 35)
+    header_x = layout['header_x']
+    header_y = layout['header_y']
+    sub_indent = layout['subheader_indent']
+    sub_spacing_y = layout['subheader_spacing_y']
+    item_spacing_x = layout['item_spacing_x']
+    item_spacing_y = layout['item_spacing_y']
 
-    header_width = shape_conf['header']['width']
-    header_height = shape_conf['header']['height']
-    subheader_width = shape_conf['subheader']['width']
-    subheader_height = shape_conf['subheader']['height']
-    item_width = shape_conf['item']['width']
-    item_height = shape_conf['item']['height']
+    sub_w = shape['subheader']['width']
+    sub_h = shape['subheader']['height']
+    item_w = shape['item']['width']
+    item_h = shape['item']['height']
 
-    # Group data
     grouped = {}
     for row in data:
         h = row['Header']
@@ -74,28 +68,33 @@ def generate_drawio(config, data):
         grouped.setdefault(h, {}).setdefault(s, []).append(i)
 
     for h_index, (header, sub_map) in enumerate(grouped.items()):
+        max_item_count = max(len(items) for items in sub_map.values())
+        max_item_x = header_x + sub_indent + sub_w + (max_item_count * item_spacing_x)
+        header_width = max_item_x - header_x
+
         header_id = str(uuid.uuid4())
         diagram.append(create_cell(
-            header_id, header, shape_conf['header']['style'],
-            header_x, header_y, header_width, header_height
+            header_id, header, shape['header']['style'],
+            header_x, header_y, header_width, shape['header']['height']
         ))
 
         for s_index, (sub, items) in enumerate(sub_map.items()):
-            sub_y = header_y + header_height + (s_index * (subheader_height + subheader_spacing_y * 2))
+            sub_y = header_y + shape['header']['height'] + (s_index * sub_spacing_y)
+            sub_x = header_x + sub_indent
             sub_id = str(uuid.uuid4())
             diagram.append(create_cell(
-                sub_id, sub, shape_conf['subheader']['style'],
-                subheader_x, sub_y, subheader_width, subheader_height
+                sub_id, sub, shape['subheader']['style'],
+                sub_x, sub_y, sub_w, sub_h
             ))
             diagram.append(create_cell(str(uuid.uuid4()), '', '', 0, 0, 0, 0, edge=True, source=header_id, target=sub_id))
 
             for i_index, item in enumerate(items):
-                item_x = subheader_x + subheader_width + item_spacing_x
-                item_y = header_y + header_height + (i_index * item_spacing_y)
+                item_x = sub_x + sub_w + (i_index * item_spacing_x)
+                item_y = sub_y + item_spacing_y
                 item_id = str(uuid.uuid4())
                 diagram.append(create_cell(
-                    item_id, item, shape_conf['item']['style'],
-                    item_x, item_y, item_width, item_height
+                    item_id, item, shape['item']['style'],
+                    item_x, item_y, item_w, item_h
                 ))
                 diagram.append(create_cell(str(uuid.uuid4()), '', '', 0, 0, 0, 0, edge=True, source=sub_id, target=item_id))
 
