@@ -29,7 +29,7 @@ def create_edge(source_id, target_id, start_x, start_y, end_x, end_y):
     edge = Element('mxCell', {
         'id': edge_id,
         'value': '',
-        'style': '',
+        'style': "edgeStyle=orthogonalEdgeStyle;exitX=0.5;exitY=1;entryX=0;entryY=0.5;",
         'edge': '1',
         'parent': '1',
         'source': source_id,
