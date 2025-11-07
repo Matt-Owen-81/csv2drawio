@@ -92,7 +92,19 @@ def generate_drawio(config, data):
                 sub_id, sub, shape['subheader']['style'],
                 sub_x, sub_y, sub_w, sub_h
             ))
-            diagram.append(create_cell(str(uuid.uuid4()), '', '', 0, 0, 0, 0, edge=True, source=header_id, target=sub_id))
+            edge_id = str(uuid.uuid4())
+            edge = create_cell(edge_id, '', '', 0, 0, 0, 0, edge=True, source=header_id, target=sub_id)
+            start_geo = SubElement(edge, 'mxGeometry', {'relative': '1'})
+            start_geo.set('as', 'geometry')
+            SubElement(start_geo, 'mxPoint', {
+                'x': str(0.5 * sub_indent_x),
+                'y': str(header_y + header_h)
+            }).set('as', 'sourcePoint')
+            SubElement(start_geo, 'mxPoint', {
+                'x': str(sub_x),
+                'y': str(sub_y + 0.5 * sub_h)
+            }).set('as', 'targetPoint')
+            diagram.append(edge)
 
             item_start_y = sub_y + sub_h + item_gap_y
             for i_index, item in enumerate(items):
