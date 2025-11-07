@@ -55,7 +55,6 @@ def generate_diagram(config, header, sub_map):
     sub_gap_y = layout['subheader_gap_y']
     item_gap_x = layout['item_gap_x']
     item_gap_y = layout['item_gap_y']
-    sub_spacing_y = layout['subheader_spacing_y']
     item_spacing_x = layout['item_spacing_x']
     item_to_subheader_gap_y = layout['item_to_subheader_gap_y']
     item_wrap_limit = layout.get('item_wrap_limit', 4)
@@ -112,7 +111,6 @@ def generate_diagram(config, header, sub_map):
         sub_id = str(uuid.uuid4())
         diagram.append(create_cell(sub_id, sub, shape['subheader']['style'], sub_x, sub_y, sub_w, sub_h))
 
-        # Header → Subheader connector
         source_x = header_x + 20
         source_y = header_y + header_h
         target_x = sub_x
@@ -148,7 +146,6 @@ def generate_diagram(config, header, sub_map):
             item_id = str(uuid.uuid4())
             diagram.append(create_cell(item_id, item, style, item_x, item_y, item_w, item_h))
 
-            # Subheader → Item connector
             source_x = sub_x + sub_w / 2
             source_y = sub_y + sub_h
             target_x = item_x + item_w / 2
@@ -179,26 +176,4 @@ with open('data.csv') as f:
 
 # Group data by Header → Subheader
 grouped = {}
-for row in data:
-    h = row['Header']
-    s = row['Sub-Header']
-    grouped.setdefault(h, {}).setdefault(s, []).append(row)
-
-# Create multi-page drawio file
-drawio_root = Element('mxfile', {
-    'host': 'app.diagrams.net',
-    'modified': '2025-11-07T22:00:00Z',
-    'agent': 'python',
-    'version': '20.6.3',
-    'type': 'device'
-})
-
-for header, sub_map in grouped.items():
-    diagram_xml = generate_diagram(config, header, sub_map)
-    diagram_element = Element('diagram', {'name': header})
-    diagram_element.text = diagram_xml
-    drawio_root.append(diagram_element)
-
-# Save to file
-pretty_xml = minidom.parseString(tostring(drawio_root)).toprettyxml(indent="  ")
-with open('diagram.drawio',
+for row in data
