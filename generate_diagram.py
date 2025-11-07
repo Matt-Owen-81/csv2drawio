@@ -82,8 +82,8 @@ def generate_drawio(config, data):
     sub_h = shape['subheader']['height']
     item_w = shape['item']['width']
     item_h = shape['item']['height']
-    header_w = shape['header']['width']
     header_h = shape['header']['height']
+    header_w = config['page']['width']  # dynamic width
 
     grouped = {}
     for row in data:
@@ -114,7 +114,7 @@ def generate_drawio(config, data):
                 source_x, source_y,
                 target_x, target_y,
                 points=[
-                    (300, bend_y),
+                    (header_x + header_w / 2, bend_y),
                     (source_x, bend_y),
                     (source_x, target_y)
                 ],
