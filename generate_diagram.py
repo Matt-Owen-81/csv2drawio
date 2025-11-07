@@ -116,16 +116,17 @@ def generate_drawio(config, data):
 
             # Header → Subheader connector
             source_x = sub_x - 20
-            source_y = sub_y - 40
+            source_y = sub_y + sub_h / 2
             target_x = sub_x
             target_y = sub_y + sub_h / 2
+            bend_y = sub_y - 20
             diagram.append(create_edge(
                 header_id, sub_id,
-                source_x, source_y + 40,
+                source_x, source_y,
                 target_x, target_y,
                 points=[
-                    (header_x + header_width / 2, source_y),
-                    (source_x, source_y),
+                    (header_x + header_width / 2, bend_y),
+                    (source_x, bend_y),
                     (source_x, target_y)
                 ],
                 style="edgeStyle=orthogonalEdgeStyle;exitX=0.5;exitY=1;entryX=0;entryY=0.5;"
