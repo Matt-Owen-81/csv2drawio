@@ -31,8 +31,9 @@ layout:
   header_x: 40                  # x position of header
   header_y: 40                  # y position of header
   subheader_indent_x: 40        # gap between right of header and left of subheader
-  subheader_gap_y: 40           # gap between bottom of header and top of subheader
+  subheader_gap_y: 40           # gap between bottom of header and top of first subheader
   item_gap_x: 40                # gap between right of subheader and left of item
   item_gap_y: 40                # gap between bottom of subheader and top of item
   subheader_spacing_y: 80       # vertical spacing between subheaders
   item_spacing_x: 160           # horizontal spacing between items
+  item_to_subheader_gap_y: 40   # vertical gap between bottom of previous item row and top of next subheader
