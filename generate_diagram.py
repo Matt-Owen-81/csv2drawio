@@ -24,12 +24,12 @@ def create_cell(id, value, style, x, y, width, height, parent='1', edge=False, s
     geometry.set('as', 'geometry')
     return cell
 
-def create_edge(source_id, target_id, start_x, start_y, end_x, end_y):
+def create_edge(source_id, target_id, start_x, start_y, end_x, end_y, points=None, style=None):
     edge_id = str(uuid.uuid4())
     edge = Element('mxCell', {
         'id': edge_id,
         'value': '',
-        'style': "edgeStyle=orthogonalEdgeStyle;exitX=0.5;exitY=1;entryX=0;entryY=0.5;",
+        'style': style or "edgeStyle=orthogonalEdgeStyle;",
         'edge': '1',
         'parent': '1',
         'source': source_id,
@@ -39,6 +39,10 @@ def create_edge(source_id, target_id, start_x, start_y, end_x, end_y):
     geometry.set('as', 'geometry')
     SubElement(geometry, 'mxPoint', {'x': str(start_x), 'y': str(start_y)}).set('as', 'sourcePoint')
     SubElement(geometry, 'mxPoint', {'x': str(end_x), 'y': str(end_y)}).set('as', 'targetPoint')
+    if points:
+        array = SubElement(geometry, 'Array', {'as': 'points'})
+        for px, py in points:
+            SubElement(array, 'mxPoint', {'x': str(px), 'y': str(py)})
     return edge
 
 def generate_drawio(config, data):
@@ -110,12 +114,19 @@ def generate_drawio(config, data):
                 sub_x, sub_y, sub_w, sub_h
             ))
 
-            # Header → Subheader connector
-            start_x = header_x + 0.5 * sub_indent_x
-            start_y = header_y + header_h
-            end_x = sub_x
-            end_y = sub_y + 0.5 * sub_h
-            diagram.append(create_edge(header_id, sub_id, start_x, start_y, end_x, end_y))
+            # Header → Subheader connector with bend points
+            bend_points = [
+                (header_x + header_width / 2, sub_y - 20),
+                (sub_x - 20, sub_y - 20),
+                (sub_x - 20, sub_y + sub_h / 2)
+            ]
+            diagram.append(create_edge(
+                header_id, sub_id,
+                header_x + sub_indent_x / 2, header_y + header_h,
+                sub_x, sub_y + sub_h / 2,
+                points=bend_points,
+                style="edgeStyle=orthogonalEdgeStyle;exitX=0.5;exitY=1;entryX=0;entryY=0.5;"
+            ))
 
             item_start_y = sub_y + sub_h + item_gap_y
             for i_index, item in enumerate(items):
@@ -127,12 +138,18 @@ def generate_drawio(config, data):
                     item_x, item_y, item_w, item_h
                 ))
 
-                # Subheader → Item connector
-                start_x = sub_x + sub_w
-                start_y = sub_y + 0.5 * sub_h
-                end_x = item_x
-                end_y = item_y + 0.5 * item_h
-                diagram.append(create_edge(sub_id, item_id, start_x, start_y, end_x, end_y))
+                # Subheader → Item connector with horizontal bend
+                bend_points = [
+                    (sub_x + sub_w / 2 - 60, item_y - 20),
+                    (item_x + item_w / 2 + 60, item_y - 20)
+                ]
+                diagram.append(create_edge(
+                    sub_id, item_id,
+                    sub_x + sub_w / 2, sub_y + sub_h,
+                    item_x + item_w / 2, item_y,
+                    points=bend_points,
+                    style="edgeStyle=orthogonalEdgeStyle;exitX=0.5;exitY=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;"
+                ))
 
             last_item_bottom_y = item_start_y + item_h + item_to_subheader_gap_y
 
