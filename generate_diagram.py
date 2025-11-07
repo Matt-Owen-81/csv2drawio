@@ -160,4 +160,43 @@ def generate_diagram(config, header, sub_map):
                     (source_x, bend_y),
                     (target_x, bend_y)
                 ],
-                style="edgeStyle=orthogonalEdgeStyle;exitX=0.5;exitY=1;entryX=0
+                style="edgeStyle=orthogonalEdgeStyle;exitX=0.5;exitY=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;"
+            ))
+
+        current_y = sub_y + sub_h + item_block_height + item_to_subheader_gap_y
+
+    return tostring(root, encoding='unicode')
+
+# Load config and data
+with open('config.yaml') as f:
+    config = yaml.safe_load(f)
+
+with open('data.csv') as f:
+    reader = csv.DictReader(f)
+    data = list(reader)
+
+# Group data by Header → Subheader
+grouped = {}
+for row in data:
+    h = row['Header']
+    s = row['Sub-Header']
+    grouped.setdefault(h, {}).setdefault(s, []).append(row)
+
+# Create multi-page drawio file
+drawio_root = Element('mxfile', {
+    'host': 'app.diagrams.net',
+    'modified': '2025-11-07T22:00:00Z',
+    'agent': 'python',
+    'version': '20.6.3',
+    'type': 'device'
+})
+
+for header, sub_map in grouped.items():
+    diagram_xml = generate_diagram(config, header, sub_map)
+    encoded = base64.b64encode(diagram_xml.encode('utf-8')).decode('utf-8')
+    diagram_element = Element('diagram', {'name': header})
+    diagram_element.text = encoded
+    drawio_root.append(diagram_element)
+
+# Save to file
+pretty_xml = minidom.parseString(tostring
