@@ -2,6 +2,7 @@ import csv
 import yaml
 import uuid
 from xml.etree.ElementTree import Element, SubElement, tostring
+from xml.dom import minidom
 
 def create_cell(id, value, style, x, y, width, height, parent='1', edge=False, source=None, target=None):
     cell = Element('mxCell', {
@@ -44,27 +45,7 @@ def create_edge(source_id, target_id, source_x, source_y, target_x, target_y, po
         SubElement(array, 'mxPoint', {'x': str(px), 'y': str(py)})
     return edge
 
-def generate_drawio(config, data):
-    root = Element('mxGraphModel', {
-        'dx': '0', 'dy': '0',
-        'grid': str(config['page']['grid']),
-        'gridSize': str(config['page']['gridSize']),
-        'guides': str(config['page']['guides']),
-        'tooltips': str(config['page']['tooltips']),
-        'connect': str(config['page']['connect']),
-        'arrows': str(config['page']['arrows']),
-        'fold': str(config['page']['fold']),
-        'page': '1',
-        'pageScale': str(config['page']['pageScale']),
-        'pageWidth': str(config['page']['pageWidth']),
-        'pageHeight': str(config['page']['pageHeight']),
-        'background': config['page']['background']
-    })
-
-    diagram = SubElement(root, 'root')
-    SubElement(diagram, 'mxCell', {'id': '0'})
-    SubElement(diagram, 'mxCell', {'id': '1', 'parent': '0'})
-
+def generate_diagram(config, header, sub_map):
     layout = config['layout']
     shape = config['shape']
 
@@ -91,88 +72,100 @@ def generate_drawio(config, data):
         'Green': '#d5e8d4'
     }
 
-    grouped = {}
-    for row in data:
-        h = row['Header']
-        s = row['Sub-Header']
-        i = row['Item']
-        grouped.setdefault(h, {}).setdefault(s, []).append(row)
+    root = Element('mxGraphModel', {
+        'dx': '0', 'dy': '0',
+        'grid': str(config['page']['grid']),
+        'gridSize': str(config['page']['gridSize']),
+        'guides': str(config['page']['guides']),
+        'tooltips': str(config['page']['tooltips']),
+        'connect': str(config['page']['connect']),
+        'arrows': str(config['page']['arrows']),
+        'fold': str(config['page']['fold']),
+        'page': '1',
+        'pageScale': str(config['page']['pageScale']),
+        'pageWidth': str(config['page']['pageWidth']),
+        'pageHeight': str(config['page']['pageHeight']),
+        'background': config['page']['background']
+    })
 
-    for header, sub_map in grouped.items():
-        max_item_right = header_x
-        for sub_index, (sub, items) in enumerate(sub_map.items()):
-            for i_index, row in enumerate(items):
-                col = i_index % item_wrap_limit
-                item_x = header_x + sub_indent_x + sub_w + item_gap_x + col * item_spacing_x
-                item_right = item_x + item_w
-                max_item_right = max(max_item_right, item_right)
+    diagram = SubElement(root, 'root')
+    SubElement(diagram, 'mxCell', {'id': '0'})
+    SubElement(diagram, 'mxCell', {'id': '1', 'parent': '0'})
 
-        header_width = max_item_right - header_x + item_gap_x
-        header_id = str(uuid.uuid4())
-        diagram.append(create_cell(header_id, header, shape['header']['style'], header_x, header_y, header_width, header_h))
+    max_item_right = header_x
+    for sub_index, (sub, items) in enumerate(sub_map.items()):
+        for i_index, row in enumerate(items):
+            col = i_index % item_wrap_limit
+            item_x = header_x + sub_indent_x + sub_w + item_gap_x + col * item_spacing_x
+            item_right = item_x + item_w
+            max_item_right = max(max_item_right, item_right)
 
-        current_y = header_y + header_h + sub_gap_y
+    header_width = max_item_right - header_x + item_gap_x
+    header_id = str(uuid.uuid4())
+    diagram.append(create_cell(header_id, header, shape['header']['style'], header_x, header_y, header_width, header_h))
 
-        for sub_index, (sub, items) in enumerate(sub_map.items()):
-            sub_x = header_x + sub_indent_x
-            sub_y = current_y
-            sub_id = str(uuid.uuid4())
-            diagram.append(create_cell(sub_id, sub, shape['header']['style'], sub_x, sub_y, sub_w, sub_h))  # blue style
+    current_y = header_y + header_h + sub_gap_y
 
-            # Header → Subheader connector
-            source_x = header_x + 20
-            source_y = header_y + header_h
-            target_x = sub_x
-            target_y = sub_y + sub_h / 2
-            mid_y = header_y + header_h + sub_gap_y / 2
-            bend_x = header_x + sub_indent_x / 2
-            center_x = header_x + header_width / 2
+    for sub_index, (sub, items) in enumerate(sub_map.items()):
+        sub_x = header_x + sub_indent_x
+        sub_y = current_y
+        sub_id = str(uuid.uuid4())
+        diagram.append(create_cell(sub_id, sub, shape['subheader']['style'], sub_x, sub_y, sub_w, sub_h))
+
+        # Header → Subheader connector
+        source_x = header_x + 20
+        source_y = header_y + header_h
+        target_x = sub_x
+        target_y = sub_y + sub_h / 2
+        mid_y = header_y + header_h + sub_gap_y / 2
+        bend_x = header_x + sub_indent_x / 2
+        center_x = header_x + header_width / 2
+        diagram.append(create_edge(
+            header_id, sub_id,
+            source_x, source_y,
+            target_x, target_y,
+            points=[
+                (center_x, mid_y),
+                (bend_x, mid_y),
+                (bend_x, target_y)
+            ],
+            style="edgeStyle=orthogonalEdgeStyle;exitX=0.5;exitY=1;entryX=0;entryY=0.5;"
+        ))
+
+        item_rows = (len(items) - 1) // item_wrap_limit + 1
+        item_block_height = item_rows * (item_h + item_gap_y)
+
+        for i_index, row in enumerate(items):
+            item = row['Item']
+            status = row.get('Status', 'Amber')
+            fill = status_colors.get(status, '#fff2cc')
+            style = f"rounded=1;fillColor={fill}"
+
+            row_num = i_index // item_wrap_limit
+            col = i_index % item_wrap_limit
+            item_x = sub_x + sub_w + item_gap_x + col * item_spacing_x
+            item_y = sub_y + sub_h + item_gap_y + row_num * (item_h + item_gap_y)
+            item_id = str(uuid.uuid4())
+            diagram.append(create_cell(item_id, item, style, item_x, item_y, item_w, item_h))
+
+            # Subheader → Item connector
+            source_x = sub_x + sub_w / 2
+            source_y = sub_y + sub_h
+            target_x = item_x + item_w / 2
+            target_y = item_y
+            bend_y = target_y - 20
             diagram.append(create_edge(
-                header_id, sub_id,
+                sub_id, item_id,
                 source_x, source_y,
                 target_x, target_y,
                 points=[
-                    (center_x, mid_y),
-                    (bend_x, mid_y),
-                    (bend_x, target_y)
+                    (source_x, bend_y),
+                    (target_x, bend_y)
                 ],
-                style="edgeStyle=orthogonalEdgeStyle;exitX=0.5;exitY=1;entryX=0;entryY=0.5;"
+                style="edgeStyle=orthogonalEdgeStyle;exitX=0.5;exitY=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;"
             ))
 
-            item_rows = (len(items) - 1) // item_wrap_limit + 1
-            item_block_height = item_rows * (item_h + item_gap_y)
-
-            for i_index, row in enumerate(items):
-                item = row['Item']
-                status = row.get('Status', 'Amber')
-                fill = status_colors.get(status, '#fff2cc')
-                style = f"rounded=1;fillColor={fill}"
-
-                row_num = i_index // item_wrap_limit
-                col = i_index % item_wrap_limit
-                item_x = sub_x + sub_w + item_gap_x + col * item_spacing_x
-                item_y = sub_y + sub_h + item_gap_y + row_num * (item_h + item_gap_y)
-                item_id = str(uuid.uuid4())
-                diagram.append(create_cell(item_id, item, style, item_x, item_y, item_w, item_h))
-
-                # Subheader → Item connector
-                source_x = sub_x + sub_w / 2
-                source_y = sub_y + sub_h
-                target_x = item_x + item_w / 2
-                target_y = item_y
-                bend_y = target_y - 20
-                diagram.append(create_edge(
-                    sub_id, item_id,
-                    source_x, source_y,
-                    target_x, target_y,
-                    points=[
-                        (source_x, bend_y),
-                        (target_x, bend_y)
-                    ],
-                    style="edgeStyle=orthogonalEdgeStyle;exitX=0.5;exitY=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;"
-                ))
-
-            current_y = sub_y + sub_h + item_block_height + item_to_subheader_gap_y
+        current_y = sub_y + sub_h + item_block_height + item_to_subheader_gap_y
 
     return tostring(root, encoding='unicode')
 
@@ -184,9 +177,28 @@ with open('data.csv') as f:
     reader = csv.DictReader(f)
     data = list(reader)
 
-# Generate diagram XML
-xml_output = generate_drawio(config, data)
+# Group data by Header → Subheader
+grouped = {}
+for row in data:
+    h = row['Header']
+    s = row['Sub-Header']
+    grouped.setdefault(h, {}).setdefault(s, []).append(row)
+
+# Create multi-page drawio file
+drawio_root = Element('mxfile', {
+    'host': 'app.diagrams.net',
+    'modified': '2025-11-07T22:00:00Z',
+    'agent': 'python',
+    'version': '20.6.3',
+    'type': 'device'
+})
+
+for header, sub_map in grouped.items():
+    diagram_xml = generate_diagram(config, header, sub_map)
+    diagram_element = Element('diagram', {'name': header})
+    diagram_element.text = diagram_xml
+    drawio_root.append(diagram_element)
 
 # Save to file
-with open('diagram.drawio', 'w') as f:
-    f.write(xml_output)
+pretty_xml = minidom.parseString(tostring(drawio_root)).toprettyxml(indent="  ")
+with open('diagram.drawio',
