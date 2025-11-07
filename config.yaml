@@ -16,14 +16,14 @@ page:
 shape:
   header:
     style: "rounded=1;fillColor=#dae8fc"
-    width: 140   # unused, overridden by dynamic width
+    width: 140
     height: 40
   subheader:
     style: "rounded=1;fillColor=#dae8fc"
     width: 120
     height: 40
   item:
-    style: "rounded=1"  # fillColor is overridden per item based on Status
+    style: "rounded=1"
     width: 120
     height: 40
 
