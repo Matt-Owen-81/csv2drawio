@@ -201,4 +201,4 @@ for header, sub_map in grouped.items():
     drawio_root.append(diagram_element)
 
 # Save to file
-final_xml = tostring(drawio_root, encoding='
+final_xml
