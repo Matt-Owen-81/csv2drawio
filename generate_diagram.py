@@ -2,6 +2,7 @@ import csv
 import yaml
 import uuid
 import base64
+import zlib
 from xml.etree.ElementTree import Element, SubElement, tostring
 from xml.dom import minidom
 
@@ -165,7 +166,7 @@ def generate_diagram(config, header, sub_map):
 
         current_y = sub_y + sub_h + item_block_height + item_to_subheader_gap_y
 
-    return tostring(root, encoding='unicode')
+    return tostring(root, encoding='utf-8')
 
 # Load config and data
 with open('config.yaml') as f:
@@ -193,13 +194,11 @@ drawio_root = Element('mxfile', {
 
 for header, sub_map in grouped.items():
     diagram_xml = generate_diagram(config, header, sub_map)
-    encoded = base64.b64encode(diagram_xml.encode('utf-8')).decode('utf-8')
+    compressed = zlib.compress(diagram_xml.encode('utf-8'))[2:-4]  # strip zlib header/footer
+    encoded = base64.b64encode(compressed).decode('utf-8')
     diagram_element = Element('diagram', {'name': header})
     diagram_element.text = encoded
     drawio_root.append(diagram_element)
 
 # Save to file
-final_xml = tostring(drawio_root, encoding='unicode')
-pretty_xml = minidom.parseString(final_xml).toprettyxml(indent="  ")
-with open('diagram.drawio', 'w', encoding='utf-8') as f:
-    f.write(pretty_xml)
+final_xml = tostring(drawio_root, encoding='
