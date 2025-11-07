@@ -115,8 +115,8 @@ def generate_drawio(config, data):
             ))
 
             # Header → Subheader connector
-            source_x = sub_x - 20
-            source_y = sub_y + sub_h / 2
+            source_x = header_x + 20
+            source_y = header_y + header_h
             target_x = sub_x
             target_y = sub_y + sub_h / 2
             bend_y = sub_y - 20
