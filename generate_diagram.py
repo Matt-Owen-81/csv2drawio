@@ -56,6 +56,7 @@ def generate_drawio(config, data):
     item_gap_y = layout['item_gap_y']
     sub_spacing_y = layout['subheader_spacing_y']
     item_spacing_x = layout['item_spacing_x']
+    item_to_subheader_gap_y = layout['item_to_subheader_gap_y']
 
     sub_w = shape['subheader']['width']
     sub_h = shape['subheader']['height']
@@ -81,8 +82,10 @@ def generate_drawio(config, data):
             header_x, header_y, header_width, header_h
         ))
 
+        last_item_bottom_y = header_y + header_h + sub_gap_y
+
         for s_index, (sub, items) in enumerate(sub_map.items()):
-            sub_y = header_y + header_h + sub_gap_y + (s_index * sub_spacing_y)
+            sub_y = last_item_bottom_y
             sub_x = header_x + sub_indent_x
             sub_id = str(uuid.uuid4())
             diagram.append(create_cell(
@@ -91,15 +94,17 @@ def generate_drawio(config, data):
             ))
             diagram.append(create_cell(str(uuid.uuid4()), '', '', 0, 0, 0, 0, edge=True, source=header_id, target=sub_id))
 
+            item_start_y = sub_y + sub_h + item_gap_y
             for i_index, item in enumerate(items):
                 item_x = sub_x + sub_w + item_gap_x + (i_index * item_spacing_x)
-                item_y = sub_y + sub_h + item_gap_y
                 item_id = str(uuid.uuid4())
                 diagram.append(create_cell(
                     item_id, item, shape['item']['style'],
-                    item_x, item_y, item_w, item_h
+                    item_x, item_start_y, item_w, item_h
                 ))
                 diagram.append(create_cell(str(uuid.uuid4()), '', '', 0, 0, 0, 0, edge=True, source=sub_id, target=item_id))
+
+            last_item_bottom_y = item_start_y + item_h + item_to_subheader_gap_y
 
     return tostring(root, encoding='unicode')
 
