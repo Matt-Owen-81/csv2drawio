@@ -85,17 +85,23 @@ def generate_drawio(config, data):
     item_h = shape['item']['height']
     header_h = shape['header']['height']
 
+    status_colors = {
+        'Red': '#f8cecc',
+        'Amber': '#fff2cc',
+        'Green': '#d5e8d4'
+    }
+
     grouped = {}
     for row in data:
         h = row['Header']
         s = row['Sub-Header']
         i = row['Item']
-        grouped.setdefault(h, {}).setdefault(s, []).append(i)
+        grouped.setdefault(h, {}).setdefault(s, []).append(row)
 
     for header, sub_map in grouped.items():
         max_item_right = header_x
         for sub_index, (sub, items) in enumerate(sub_map.items()):
-            for i_index, item in enumerate(items):
+            for i_index, row in enumerate(items):
                 col = i_index % item_wrap_limit
                 item_x = header_x + sub_indent_x + sub_w + item_gap_x + col * item_spacing_x
                 item_right = item_x + item_w
@@ -111,7 +117,7 @@ def generate_drawio(config, data):
             sub_x = header_x + sub_indent_x
             sub_y = current_y
             sub_id = str(uuid.uuid4())
-            diagram.append(create_cell(sub_id, sub, shape['subheader']['style'], sub_x, sub_y, sub_w, sub_h))
+            diagram.append(create_cell(sub_id, sub, shape['header']['style'], sub_x, sub_y, sub_w, sub_h))  # blue style
 
             # Header → Subheader connector
             source_x = header_x + 20
@@ -136,13 +142,18 @@ def generate_drawio(config, data):
             item_rows = (len(items) - 1) // item_wrap_limit + 1
             item_block_height = item_rows * (item_h + item_gap_y)
 
-            for i_index, item in enumerate(items):
-                row = i_index // item_wrap_limit
+            for i_index, row in enumerate(items):
+                item = row['Item']
+                status = row.get('Status', 'Amber')
+                fill = status_colors.get(status, '#fff2cc')
+                style = f"rounded=1;fillColor={fill}"
+
+                row_num = i_index // item_wrap_limit
                 col = i_index % item_wrap_limit
                 item_x = sub_x + sub_w + item_gap_x + col * item_spacing_x
-                item_y = sub_y + sub_h + item_gap_y + row * (item_h + item_gap_y)
+                item_y = sub_y + sub_h + item_gap_y + row_num * (item_h + item_gap_y)
                 item_id = str(uuid.uuid4())
-                diagram.append(create_cell(item_id, item, shape['item']['style'], item_x, item_y, item_w, item_h))
+                diagram.append(create_cell(item_id, item, style, item_x, item_y, item_w, item_h))
 
                 # Subheader → Item connector
                 source_x = sub_x + sub_w / 2
