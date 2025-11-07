@@ -114,7 +114,7 @@ def generate_drawio(config, data):
                 sub_x, sub_y, sub_w, sub_h
             ))
 
-            # Header → Subheader connector
+            # Header → Subheader connector (fixed sourcePoint, dynamic bend path)
             source_x = header_x + 20
             source_y = header_y + header_h
             target_x = sub_x
