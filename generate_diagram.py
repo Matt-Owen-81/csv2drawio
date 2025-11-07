@@ -201,4 +201,7 @@ for header, sub_map in grouped.items():
     drawio_root.append(diagram_element)
 
 # Save to file
-final_xml = tostring(draw
+final_xml = tostring(drawio_root, encoding='unicode')
+pretty_xml = minidom.parseString(final_xml).toprettyxml(indent="  ")
+with open('diagram.drawio', 'w', encoding='utf-8') as f:
+    f.write(pretty_xml)
