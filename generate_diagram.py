@@ -1,3 +1,17 @@
+import csv
+import yaml
+import uuid
+from xml.etree.ElementTree import Element, SubElement, tostring
+
+# Load config and data FIRST
+with open('config.yaml') as f:
+    config = yaml.safe_load(f)
+
+with open('data.csv') as f:
+    reader = csv.DictReader(f)
+    data = list(reader)
+
+# Now it's safe to access config and data
 layout = config.get('layout', {})
 shape_conf = config['shape']
 
