@@ -9,10 +9,10 @@ ABC,34,GG,Amber
 ABC,34,HH,Green
 ABC,34,II,Green
 ABC,34,JJ,Green
-ABC,56,KK,Green
-ABC,56,LL,Red
-ABC,78,MM,Red
-ABC,78,NN,Green
-ABC,78,OO,Green
-ABC,90,PP,Amber
-ABC,90,QQ,Red
+DEF,56,KK,Green
+DEF,56,LL,Red
+DEF,78,MM,Red
+DEF,78,NN,Green
+DEF,78,OO,Green
+GHI,90,PP,Amber
+GHI,90,QQ,Red
