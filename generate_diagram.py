@@ -194,11 +194,13 @@ drawio_root = Element('mxfile', {
 
 for header, sub_map in grouped.items():
     diagram_xml = generate_diagram(config, header, sub_map)
-    compressed = zlib.compress(diagram_xml.encode('utf-8'))[2:-4]  # strip zlib header/footer
+    compressed = zlib.compress(diagram_xml)[2:-4]  # strip zlib header/footer
     encoded = base64.b64encode(compressed).decode('utf-8')
     diagram_element = Element('diagram', {'name': header})
     diagram_element.text = encoded
     drawio_root.append(diagram_element)
 
 # Save to file
-final_xml
+final_xml = tostring(drawio_root, encoding='unicode')
+pretty_xml = minidom.parseString(final_xml).toprettyxml(indent="  ")
+with
