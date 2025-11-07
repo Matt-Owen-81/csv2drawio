@@ -24,7 +24,7 @@ def create_cell(id, value, style, x, y, width, height, parent='1', edge=False, s
     geometry.set('as', 'geometry')
     return cell
 
-def create_edge(source_id, target_id, source_x, source_y, target_x, target_y, bend_points, style):
+def create_edge(source_id, target_id, source_x, source_y, target_x, target_y, points, style):
     edge_id = str(uuid.uuid4())
     edge = Element('mxCell', {
         'id': edge_id,
@@ -39,27 +39,26 @@ def create_edge(source_id, target_id, source_x, source_y, target_x, target_y, be
     geometry.set('as', 'geometry')
     SubElement(geometry, 'mxPoint', {'x': str(source_x), 'y': str(source_y)}).set('as', 'sourcePoint')
     SubElement(geometry, 'mxPoint', {'x': str(target_x), 'y': str(target_y)}).set('as', 'targetPoint')
-    if bend_points:
-        array = SubElement(geometry, 'Array', {'as': 'points'})
-        for x, y in bend_points:
-            SubElement(array, 'mxPoint', {'x': str(x), 'y': str(y)})
+    array = SubElement(geometry, 'Array', {'as': 'points'})
+    for px, py in points:
+        SubElement(array, 'mxPoint', {'x': str(px), 'y': str(py)})
     return edge
 
 def generate_drawio(config, data):
     root = Element('mxGraphModel', {
         'dx': '0', 'dy': '0',
-        'grid': str(config['page'].get('grid', 1)),
-        'gridSize': str(config['page'].get('gridSize', 10)),
-        'guides': str(config['page'].get('guides', 1)),
-        'tooltips': str(config['page'].get('tooltips', 1)),
-        'connect': str(config['page'].get('connect', 1)),
-        'arrows': str(config['page'].get('arrows', 1)),
-        'fold': str(config['page'].get('fold', 1)),
+        'grid': str(config['page']['grid']),
+        'gridSize': str(config['page']['gridSize']),
+        'guides': str(config['page']['guides']),
+        'tooltips': str(config['page']['tooltips']),
+        'connect': str(config['page']['connect']),
+        'arrows': str(config['page']['arrows']),
+        'fold': str(config['page']['fold']),
         'page': '1',
-        'pageScale': str(config['page'].get('pageScale', 1)),
-        'pageWidth': str(config['page'].get('pageWidth', config['page']['width'])),
-        'pageHeight': str(config['page'].get('pageHeight', config['page']['height'])),
-        'background': config['page'].get('background', '#ffffff')
+        'pageScale': str(config['page']['pageScale']),
+        'pageWidth': str(config['page']['pageWidth']),
+        'pageHeight': str(config['page']['pageHeight']),
+        'background': config['page']['background']
     })
 
     diagram = SubElement(root, 'root')
@@ -75,6 +74,7 @@ def generate_drawio(config, data):
     sub_gap_y = layout['subheader_gap_y']
     item_gap_x = layout['item_gap_x']
     item_gap_y = layout['item_gap_y']
+    sub_spacing_y = layout['subheader_spacing_y']
     item_spacing_x = layout['item_spacing_x']
     item_to_subheader_gap_y = layout['item_to_subheader_gap_y']
 
@@ -82,6 +82,7 @@ def generate_drawio(config, data):
     sub_h = shape['subheader']['height']
     item_w = shape['item']['width']
     item_h = shape['item']['height']
+    header_w = shape['header']['width']
     header_h = shape['header']['height']
 
     grouped = {}
@@ -92,17 +93,13 @@ def generate_drawio(config, data):
         grouped.setdefault(h, {}).setdefault(s, []).append(i)
 
     for header, sub_map in grouped.items():
-        max_items = max(len(items) for items in sub_map.values())
-        header_width = header_x + sub_indent_x + sub_w + item_gap_x + max_items * item_spacing_x - header_x
-
         header_id = str(uuid.uuid4())
-        diagram.append(create_cell(header_id, header, shape['header']['style'], header_x, header_y, header_width, header_h))
+        diagram.append(create_cell(header_id, header, shape['header']['style'], header_x, header_y, header_w, header_h))
 
-        current_y = header_y + header_h + sub_gap_y
-
+        sub_index = 0
         for sub, items in sub_map.items():
             sub_x = header_x + sub_indent_x
-            sub_y = current_y
+            sub_y = header_y + header_h + sub_gap_y + sub_index * layout['subheader_spacing_y']
             sub_id = str(uuid.uuid4())
             diagram.append(create_cell(sub_id, sub, shape['subheader']['style'], sub_x, sub_y, sub_w, sub_h))
 
@@ -111,23 +108,23 @@ def generate_drawio(config, data):
             source_y = header_y + header_h
             target_x = sub_x
             target_y = sub_y + sub_h / 2
-            bend_y = sub_y - 20
-            bend_points = [
-                (header_x + header_width / 2, bend_y),
-                (source_x, bend_y),
-                (source_x, target_y)
-            ]
+            bend_y = target_y - 40
             diagram.append(create_edge(
                 header_id, sub_id,
                 source_x, source_y,
                 target_x, target_y,
-                bend_points,
-                "edgeStyle=orthogonalEdgeStyle;exitX=0.5;exitY=1;entryX=0;entryY=0.5;"
+                points=[
+                    (300, bend_y),
+                    (source_x, bend_y),
+                    (source_x, target_y)
+                ],
+                style="edgeStyle=orthogonalEdgeStyle;exitX=0.5;exitY=1;entryX=0;entryY=0.5;"
             ))
 
-            item_y = sub_y + sub_h + item_gap_y
+            # Items
             for i_index, item in enumerate(items):
                 item_x = sub_x + sub_w + item_gap_x + i_index * item_spacing_x
+                item_y = sub_y + sub_h + item_gap_y
                 item_id = str(uuid.uuid4())
                 diagram.append(create_cell(item_id, item, shape['item']['style'], item_x, item_y, item_w, item_h))
 
@@ -137,19 +134,18 @@ def generate_drawio(config, data):
                 target_x = item_x + item_w / 2
                 target_y = item_y
                 bend_y = target_y - 20
-                bend_points = [
-                    (source_x, bend_y),
-                    (target_x, bend_y)
-                ]
                 diagram.append(create_edge(
                     sub_id, item_id,
                     source_x, source_y,
                     target_x, target_y,
-                    bend_points,
-                    "edgeStyle=orthogonalEdgeStyle;exitX=0.5;exitY=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;"
+                    points=[
+                        (source_x, bend_y),
+                        (target_x, bend_y)
+                    ],
+                    style="edgeStyle=orthogonalEdgeStyle;exitX=0.5;exitY=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;"
                 ))
 
-            current_y = item_y + item_h + item_to_subheader_gap_y
+            sub_index += 1
 
     return tostring(root, encoding='unicode')
 
