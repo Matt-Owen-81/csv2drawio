@@ -100,7 +100,7 @@ def generate_drawio(config, data):
                 item_right = item_x + item_w
                 max_item_right = max(max_item_right, item_right)
 
-        header_width = max_item_right - header_x
+        header_width = max_item_right - header_x + item_gap_x
         header_id = str(uuid.uuid4())
         diagram.append(create_cell(header_id, header, shape['header']['style'], header_x, header_y, header_width, header_h))
 
@@ -110,20 +110,24 @@ def generate_drawio(config, data):
             sub_id = str(uuid.uuid4())
             diagram.append(create_cell(sub_id, sub, shape['subheader']['style'], sub_x, sub_y, sub_w, sub_h))
 
-            # Header → Subheader connector
+            # Header → Subheader connector using specified bend geometry
             source_x = header_x + 20
             source_y = header_y + header_h
             target_x = sub_x
             target_y = sub_y + sub_h / 2
-            bend_y = target_y - 40
+
+            mid_y = header_y + header_h + sub_gap_y / 2
+            bend_x = header_x + sub_indent_x / 2
+            center_x = header_x + header_width / 2
+
             diagram.append(create_edge(
                 header_id, sub_id,
                 source_x, source_y,
                 target_x, target_y,
                 points=[
-                    (header_x + header_width / 2, bend_y),
-                    (source_x, bend_y),
-                    (source_x, target_y)
+                    (center_x, mid_y),
+                    (bend_x, mid_y),
+                    (bend_x, target_y)
                 ],
                 style="edgeStyle=orthogonalEdgeStyle;exitX=0.5;exitY=1;entryX=0;entryY=0.5;"
             ))
