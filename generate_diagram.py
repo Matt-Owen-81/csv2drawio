@@ -98,7 +98,6 @@ def generate_diagram(config, header, sub_map):
     SubElement(diagram, 'mxCell', {'id': '0'})
     SubElement(diagram, 'mxCell', {'id': '1', 'parent': '0'})
 
-    # Calculate header width
     max_item_right = header_x
     for sub, items in sub_map.items():
         for i_index in range(len(items)):
@@ -119,7 +118,6 @@ def generate_diagram(config, header, sub_map):
         sub_id = str(uuid.uuid4())
         diagram.append(create_cell(sub_id, sub, shape['subheader']['style'], sub_x, sub_y, sub_w, sub_h))
 
-        # Connect header to subheader
         center_x = header_x + header_width / 2
         mid_y = header_y + header_h + sub_gap_y / 2
         bend_x = header_x + sub_indent_x / 2
@@ -131,7 +129,6 @@ def generate_diagram(config, header, sub_map):
             style="edgeStyle=orthogonalEdgeStyle;exitX=0.5;exitY=1;entryX=0;entryY=0.5;"
         ))
 
-        # Split items by scope
         items_true = [row for row in items if row.get('Scope') == 'TRUE']
         items_false = [row for row in items if row.get('Scope') == 'FALSE']
         groups = [('Item 1', items_true), ('Item 2', items_false)]
@@ -141,7 +138,6 @@ def generate_diagram(config, header, sub_map):
             label_id = str(uuid.uuid4())
             diagram.append(create_cell(label_id, label_text, shape['label']['style'], sub_x, label_y, label_w, label_h))
 
-            # Connect subheader to label
             diagram.append(create_edge(
                 sub_id, label_id,
                 sub_x + sub_w / 2, sub_y + sub_h,
@@ -150,7 +146,6 @@ def generate_diagram(config, header, sub_map):
                 style="edgeStyle=orthogonalEdgeStyle;exitX=0.5;exitY=1;entryX=0.5;entryY=0;"
             ))
 
-            # Background box
             cols = min(len(group_items), item_wrap_limit)
             rows = (len(group_items) - 1) // item_wrap_limit + 1
             bg_width = cols * item_w + (cols - 1) * item_spacing_x
@@ -160,7 +155,6 @@ def generate_diagram(config, header, sub_map):
             bg_id = str(uuid.uuid4())
             diagram.append(create_cell(bg_id, '', bg_style, bg_x, bg_y, bg_width + 2 * pad_x, bg_height + 2 * pad_y))
 
-            # Items
             for i_index, row in enumerate(group_items):
                 item = row['Item']
                 status = row.get('Status', 'Amber')
@@ -174,9 +168,55 @@ def generate_diagram(config, header, sub_map):
                 item_id = str(uuid.uuid4())
                 diagram.append(create_cell(item_id, item, style, item_x, item_y, item_w, item_h))
 
-                # Connect label to item
                 diagram.append(create_edge(
                     label_id, item_id,
                     sub_x + label_w / 2, label_y + label_h,
                     item_x + item_w / 2, item_y,
-                    points=[(sub_x + label_w / 2,
+                    points=[
+                        (sub_x + label_w / 2, item_y - 20),
+                        (item_x + item_w / 2, item_y - 20)
+                    ],
+                    style="edgeStyle=orthogonalEdgeStyle;exitX=0.5;exitY=1;entryX=0.5;entryY=0;"
+                ))
+
+        current_y = sub_y + sub_h + 2 * item_to_subheader_gap_y + 2 * label_h + 2 * item_gap_y + bg_height
+
+    return tostring(root, encoding='utf-8')
+
+# Load config and data
+with open('config.yaml') as f:
+    config = yaml.safe_load(f)
+
+with open('data.csv') as f:
+    reader = csv.DictReader(f)
+    data = list(reader)
+
+# Group data by Header → Subheader
+grouped = {}
+for row in data:
+    h = row['Header']
+    s = row['Sub-Header']
+    grouped.setdefault(h, {}).setdefault(s, []).append(row)
+
+# Create multi-page drawio file
+drawio_root = Element('mxfile', {
+    'host': 'app.diagrams.net',
+    'modified': '2025-11-12T20:50:00Z',
+    'agent': 'python',
+    'version': '20.6.3',
+    'type': 'device'
+})
+
+for header, sub_map in grouped.items():
+    diagram_bytes = generate_diagram(config, header, sub_map)
+    compressed = zlib.compress(diagram_bytes)[2:-4]
+    encoded = base64.b64encode(compressed).decode('utf-8')
+    diagram_element = Element('diagram', {'name': header})
+    diagram_element.text = encoded
+    drawio_root.append(diagram_element)
+
+# Save to file
+final_xml = tostring(drawio_root, encoding='unicode')
+pretty_xml = minidom.parseString(final_xml).toprettyxml(indent="  ")
+with open('diagram.drawio', 'w', encoding='utf-8') as f:
+    f.write(pretty_xml)
